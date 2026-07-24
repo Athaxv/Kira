@@ -6,11 +6,14 @@ export async function requireWorkspaceMember(req: Request, res: Response, next: 
         const { workspaceId } = req.params;
         const userId = req.userId;
 
-        if (userId || workspaceId){
-            return res.status(401).json({
-                message: "Unauthorized"
-            })
-        }
+        console.log("WorkspaceId: ", workspaceId)
+        console.log("userId: ", userId)
+
+        // if (userId || workspaceId){
+        //     return res.status(401).json({
+        //         message: "Unauthorized"
+        //     })
+        // }
 
         const workspaceMember = await prisma.workspaceMember.findUnique({
             where: {

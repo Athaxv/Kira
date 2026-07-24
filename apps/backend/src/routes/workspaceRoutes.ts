@@ -15,9 +15,9 @@ router.post("/", authenticate, async (req, res) => {
     }
 
     try {
-        const title = req.body.title;
+        const { title } = req.body;
 
-        if (!title?.trim()) {
+        if (!title?.trim) {
             return res.status(401).json({
                 message: "No body for workspace creation"
             })

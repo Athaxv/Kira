@@ -7,7 +7,7 @@ import { workspaceAdmin } from "../middleware/workspaceAdmin";
 const router = Router()
 
 //GET all project
-router.get("/workspaces/:workspaceId/projects", authenticate, requireWorkspaceMember, async (req, res) => {
+router.get("/:workspaceId/projects", authenticate, requireWorkspaceMember, async (req, res) => {
     try {
         const { workspaceId } = req.params;
 
@@ -30,7 +30,7 @@ router.get("/workspaces/:workspaceId/projects", authenticate, requireWorkspaceMe
 })
 
 //POST create project
-router.post('/workspaces/:workspaceId/projects', authenticate, requireWorkspaceMember, workspaceAdmin, async (req, res) => {
+router.post('/:workspaceId/projects', authenticate, requireWorkspaceMember, workspaceAdmin, async (req, res) => {
     try {
         const { workspaceId } = req.params;
         const { title } = req.body;
@@ -61,7 +61,7 @@ router.post('/workspaces/:workspaceId/projects', authenticate, requireWorkspaceM
 })
 
 //DELETE project
-router.delete('/workspaces/:workspaceId/projects/:projectId', authenticate, requireWorkspaceMember, workspaceAdmin, async (req, res) => {
+router.delete('/:workspaceId/projects/:projectId', authenticate, requireWorkspaceMember, workspaceAdmin, async (req, res) => {
     try {
         const { projectId } = req.params;
 

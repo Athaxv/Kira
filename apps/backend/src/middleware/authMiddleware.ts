@@ -32,6 +32,7 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
         return next();
         
     } catch (error) {
+        console.error(error);
         res.status(401).json({
             message: "Internal error ocurred"
         })
