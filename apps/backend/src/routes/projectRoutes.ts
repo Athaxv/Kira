@@ -1,30 +1,15 @@
 import { Router } from "express";
 import { authenticate } from "../middleware/authMiddleware";
 import { prisma } from "@repo/db";
+import { requireWorkspaceMember } from "../middleware/workspaceMember";
+import { workspaceAdmin } from "../middleware/workspaceAdmin";
 
 const router = Router()
 
-//GET all prjects
-router.get("/workspaces/:workspaceId/projects", authenticate, async (req, res) => {
-    const userId = req.userId;
-
+//GET all project
+router.get("/workspaces/:workspaceId/projects", authenticate, requireWorkspaceMember, async (req, res) => {
     try {
         const { workspaceId } = req.params;
-
-        const checkUserWorkspace = await prisma.workspaceMember.findUnique({
-            where: {
-                workspaceId_userId: {
-                    workspaceId,
-                    userId
-                }
-            }
-        })
-
-        if (!checkUserWorkspace){
-            return res.status(403).json({
-                message: "You not a member"
-            })
-        }
 
         const projects = await prisma.project.findMany({
             where: {
@@ -45,9 +30,7 @@ router.get("/workspaces/:workspaceId/projects", authenticate, async (req, res) =
 })
 
 //POST create project
-router.post('/workspaces/:workspaceId/projects', authenticate, async (req, res) => {
-    const userId = req.userId;
-
+router.post('/workspaces/:workspaceId/projects', authenticate, requireWorkspaceMember, workspaceAdmin, async (req, res) => {
     try {
         const { workspaceId } = req.params;
         const { title } = req.body;
@@ -55,27 +38,6 @@ router.post('/workspaces/:workspaceId/projects', authenticate, async (req, res) 
         if (!title.trim()){
             return res.status(400).json({
                 message: "Project title is required"
-            })
-        }
-
-        const checkAdmin = await prisma.workspaceMember.findUnique({
-            where: {
-                workspaceId_userId: {
-                    workspaceId,
-                    userId
-                }
-            }
-        })
-
-        if (!checkAdmin){
-            return res.status(403).json({
-                message: "You not a member"
-            })
-        }
-
-        if (checkAdmin?.role != 'ADMIN'){
-            return res.status(403).json({
-                message: "Only Admins"
             })
         }
 
@@ -99,9 +61,7 @@ router.post('/workspaces/:workspaceId/projects', authenticate, async (req, res) 
 })
 
 //DELETE project
-router.delete('/workspaces/projects/:projectId', authenticate, async (req, res) => {
-    const userId = req.userId;
-
+router.delete('/workspaces/:workspaceId/projects/:projectId', authenticate, requireWorkspaceMember, workspaceAdmin, async (req, res) => {
     try {
         const { projectId } = req.params;
 
@@ -117,34 +77,13 @@ router.delete('/workspaces/projects/:projectId', authenticate, async (req, res) 
             })
         }
 
-        const checkAdmin = await prisma.workspaceMember.findUnique({
-            where: {
-                workspaceId_userId: {
-                    findProject.workspaceId,
-                    userId
-                }
-            }
-        })
-
-        if (!checkAdmin){
-            return res.status(403).json({
-                message: "You not a member"
-            })
-        }
-
-        if (checkAdmin?.role != 'ADMIN'){
-            return res.status(403).json({
-                message: "Only Admins"
-            })
-        }
-
         await prisma.project.delete({
             where: {
                 id: projectId
             }
         })
 
-        return res.status(201).json({
+        return res.status(200).json({
             message: "Project Deleted!"
         })
 
