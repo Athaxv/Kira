@@ -18,9 +18,9 @@ router.get("/:projectId/issues", authenticate, async (req, res) => {
         })
 
         if (!project){
-            return res.status(402).json({
-                message: "No project exists"
-            })
+            return {
+                success: false
+            }
         }
 
         const isPartofWorkspace = await prisma.workspaceMember.findUnique({
@@ -33,9 +33,9 @@ router.get("/:projectId/issues", authenticate, async (req, res) => {
         })
 
         if (!isPartofWorkspace) {
-            return res.status(402).json({
-                message: "Unauthorized"
-            })
+            return {
+                success: false
+            }
         }
 
         const issues = await prisma.issue.findMany({
@@ -52,10 +52,9 @@ router.get("/:projectId/issues", authenticate, async (req, res) => {
             issues
         })
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({
-            message: "Internal server error"
-        })
+        return {
+            success: false
+        }
     }
 })
 
