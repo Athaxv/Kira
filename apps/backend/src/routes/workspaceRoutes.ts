@@ -1,136 +1,108 @@
 import { Router } from "express";
 import { authenticate } from "../middleware/authMiddleware";
 import { prisma } from "@repo/db";
+import { UnauthroizedError } from "../errors/unauthorizedError";
+import { validate } from "../middleware/validator";
+import { addMembertoWorkspace, workspaceSchema } from "../validators/workspaceValidator";
+import { NotFoundError } from "../errors/notFound";
 
 const router = Router();
 
 //create workspaces
-router.post("/", authenticate, async (req, res) => {
+router.post("/", authenticate, validate(workspaceSchema), async (req, res) => {
     const userId = req.userId;
 
     if (!userId) {
-        return res.status(400).json({
-            message: "Unauthorized"
-        })
+        throw new UnauthroizedError("User not Found");
     }
 
-    try {
-        const { title } = req.body;
+    const { title } = req.body;
 
-        if (!title?.trim) {
-            return res.status(401).json({
-                message: "No body for workspace creation"
-            })
-        }
-
-        // transaction
-        const workspace = await prisma.$transaction(async (tx) => {
-            const workspace = await tx.workspace.create({
-                data: {
-                    title: title.trim()
-                }
-            })
-            await tx.workspaceMember.create({
-                data: {
-                    userId: userId,
-                    role: "ADMIN",
-                    workspaceId: workspace.id
-                }
-            })
-
-            return workspace;
+    // transaction
+    const workspace = await prisma.$transaction(async (tx) => {
+        const workspace = await tx.workspace.create({
+            data: {
+                title: title.trim()
+            }
+        })
+        await tx.workspaceMember.create({
+            data: {
+                userId: userId,
+                role: "ADMIN",
+                workspaceId: workspace.id
+            }
         })
 
-        res.status(201).json({
-            message: "Workspace created",
+        return workspace;
+    })
+
+    res.status(201).json({
+        success: true,
+        message: "Workspace created",
+        data: {
             workspace
-        })
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({
-            message: "Internal server error"
-        })
-    }
+        }
+    })
 })
 
 //add members to workspaces
-router.post("/:workspaceId/members", authenticate, async (req, res) => {
+router.post("/:workspaceId/members", validate(addMembertoWorkspace), authenticate, async (req, res) => {
     const userId = req.userId;
 
-    try {
-        const { workspaceId } = req.params;
-        const { email } = req.body
+    const { workspaceId } = req.params;
+    const { email } = req.body
 
-        if (!email.trim()){
-            return res.status(400).json({
-                message: "Email is required"
-            });
-        }
-
-        const workspaceMember = await prisma.workspaceMember.findUnique({
-            where: {
-                workspaceId_userId: {
-                    workspaceId,
-                    userId
-                }
+    const workspaceMember = await prisma.workspaceMember.findUnique({
+        where: {
+            workspaceId_userId: {
+                workspaceId,
+                userId
             }
-        })
-
-        if (!workspaceMember){
-            return res.status(403).json({
-                message: "You not a member"
-            })
         }
+    })
 
-        if (workspaceMember?.role != 'ADMIN'){
-            return res.status(403).json({
-                message: "Only Admins"
-            })
-        }
-
-        const checkUserExist = await prisma.user.findUnique({
-            where: {
-                email: email
-            }
-        })
-
-        if (!checkUserExist?.id){
-            return res.status(404).json({
-                message: "No user found"
-            })
-        }
-
-        const checkUserWorkspace = await prisma.workspaceMember.findUnique({
-            where: {
-                workspaceId_userId: {
-                    workspaceId,
-                    userId: checkUserExist.id
-                }
-            }
-        })
-
-        if (checkUserWorkspace){
-            return res.status(409).json({
-                message: "User already present in the Workspace"
-            })
-        }
-
-        await prisma.workspaceMember.create({
-            data: {
-                userId: checkUserExist.id,
-                workspaceId: workspaceId
-            }
-        })
-
-        return res.status(201).json({
-            message: "Added to Workspace"
-        })
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({
-            message: "Internal Server Error"
-        })
+    if (!workspaceMember) {
+        throw new UnauthroizedError("Only admins are authorized for this operation.")
     }
+
+    if (workspaceMember?.role != 'ADMIN') {
+        throw new UnauthroizedError("Only admins can add to workspaces")
+    }
+
+    const checkUserExist = await prisma.user.findUnique({
+        where: {
+            email: email
+        }
+    })
+
+    if (!checkUserExist?.id) {
+        throw new NotFoundError("User not found")
+    }
+
+    const checkUserWorkspace = await prisma.workspaceMember.findUnique({
+        where: {
+            workspaceId_userId: {
+                workspaceId,
+                userId: checkUserExist.id
+            }
+        }
+    })
+
+    if (checkUserWorkspace) {
+        throw new UnauthroizedError("You are not a part of this workspace")
+    }
+
+    await prisma.workspaceMember.create({
+        data: {
+            userId: checkUserExist.id,
+            workspaceId: workspaceId
+        }
+    })
+
+    return res.status(201).json({
+        success: true,
+        message: "Added to Workspace"
+    })
 })
 
 export default router;

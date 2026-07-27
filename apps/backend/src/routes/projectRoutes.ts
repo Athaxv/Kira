@@ -5,90 +5,74 @@ import { requireWorkspaceMember } from "../middleware/workspaceMember";
 import { workspaceAdmin } from "../middleware/workspaceAdmin";
 import { validate } from "../middleware/validator";
 import { createProjectSchema } from "../validators/projectValidator";
+import { NotFoundError } from "../errors/notFound";
 
 const router = Router()
 
 //GET all project
 router.get("/:workspaceId/projects", authenticate, requireWorkspaceMember, async (req, res) => {
-    try {
-        const { workspaceId } = req.params;
+    const { workspaceId } = req.params;
 
-        const projects = await prisma.project.findMany({
-            where: {
-                workspaceId
-            }
-        })
+    const projects = await prisma.project.findMany({
+        where: {
+            workspaceId
+        }
+    })
 
-        return res.status(200).json({
-            message: "DONE",
+    return res.status(200).json({
+        success: true,
+        data: {
             projects
-        })
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({
-            message: "Internal Server Error"
-        })
-    }
+        }
+    })
 })
 
 //POST create project
 router.post('/:workspaceId/projects', validate(createProjectSchema), authenticate, requireWorkspaceMember, workspaceAdmin, async (req, res) => {
-    try {
-        const { workspaceId } = req.params;
-        const { title } = req.body;
+    const { workspaceId } = req.params;
+    const { title } = req.body;
 
-        const project = await prisma.project.create({
-            data: {
-                title: title,
-                workspaceId: workspaceId
-            }
-        })
+    const project = await prisma.project.create({
+        data: {
+            title: title,
+            workspaceId: workspaceId
+        }
+    })
 
-        return res.status(201).json({
-            message: "Project created!",
+    return res.status(201).json({
+        success: true,
+        message: "Project created!",
+        data: {
             project
-        })
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({
-            message: "Internal Server Error"
-        })
-    }
+        }
+    })
 })
 
 //DELETE project
 router.delete('/:workspaceId/projects/:projectId', authenticate, requireWorkspaceMember, workspaceAdmin, async (req, res) => {
-    try {
-        const { projectId } = req.params;
+    const { projectId } = req.params;
 
-        const findProject = await prisma.project.findUnique({
-            where: {
-                id: projectId
-            }
-        })
-
-        if (!findProject){
-            return res.json({
-                message: "No project exist"
-            })
+    const findProject = await prisma.project.findUnique({
+        where: {
+            id: projectId
         }
+    })
 
-        await prisma.project.delete({
-            where: {
-                id: projectId
-            }
-        })
-
-        return res.status(200).json({
-            message: "Project Deleted!"
-        })
-
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({
-            message: "Internal Server Error"
-        })
+    if (!findProject) {
+        throw new NotFoundError("Project not found")
     }
+
+    await prisma.project.delete({
+        where: {
+            id: projectId
+        }
+    })
+
+    return res.status(200).json({
+        success: true,
+        message: "Project Deleted!"
+    })
+
 })
 
 export default router;
