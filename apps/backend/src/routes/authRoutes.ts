@@ -2,20 +2,16 @@ import bcrypt from "bcryptjs";
 import { Router } from "express";
 import { prisma } from "@repo/db";
 import jwt from "jsonwebtoken";
+import { validate } from "../middleware/validator";
+import { loginSchema, registerSchema } from "../validators/authValidator";
 
 const router = Router()
 
 const JWT_SECRET = process.env.SECRET!;
 
-router.post('/register', async (req, res) => {
+router.post('/register', validate(registerSchema), async (req, res) => {
     try {
         const { email, password } = req.body;
-
-        if (!password || !email) {
-            return res.json({
-                message: "send full user info!"
-            })
-        }
 
         const hashPassword = await bcrypt.hash(password, 10)
 
@@ -39,7 +35,7 @@ router.post('/register', async (req, res) => {
     }
 })
 
-router.post("/login", async (req, res) => {
+router.post("/login", validate(loginSchema), async (req, res) => {
     const { email, password } = req.body;
 
     try {

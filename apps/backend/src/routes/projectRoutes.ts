@@ -3,6 +3,8 @@ import { authenticate } from "../middleware/authMiddleware";
 import { prisma } from "@repo/db";
 import { requireWorkspaceMember } from "../middleware/workspaceMember";
 import { workspaceAdmin } from "../middleware/workspaceAdmin";
+import { validate } from "../middleware/validator";
+import { createProjectSchema } from "../validators/projectValidator";
 
 const router = Router()
 
@@ -30,16 +32,10 @@ router.get("/:workspaceId/projects", authenticate, requireWorkspaceMember, async
 })
 
 //POST create project
-router.post('/:workspaceId/projects', authenticate, requireWorkspaceMember, workspaceAdmin, async (req, res) => {
+router.post('/:workspaceId/projects', validate(createProjectSchema), authenticate, requireWorkspaceMember, workspaceAdmin, async (req, res) => {
     try {
         const { workspaceId } = req.params;
         const { title } = req.body;
-
-        if (!title.trim()){
-            return res.status(400).json({
-                message: "Project title is required"
-            })
-        }
 
         const project = await prisma.project.create({
             data: {
