@@ -7,4 +7,10 @@ export const createProjectSchema = z.object({
             .max(50, "Maximum 50 chars are allowed")
 })
 
+export const patchProjectSchema = z.object({
+    title: z.string()
+            .trim()
+})
+
 export type projectInput = z.infer<typeof createProjectSchema>
+export type patchProjectInput = z.infer<typeof patchProjectSchema>

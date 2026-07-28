@@ -4,7 +4,7 @@ import { prisma } from "@repo/db";
 import { requireWorkspaceMember } from "../middleware/workspaceMember";
 import { workspaceAdmin } from "../middleware/workspaceAdmin";
 import { validate } from "../middleware/validator";
-import { createProjectSchema } from "../validators/projectValidator";
+import { createProjectSchema, patchProjectSchema } from "../validators/projectValidator";
 import { NotFoundError } from "../errors/notFound";
 import { client } from "../lib/redis";
 
@@ -51,13 +51,28 @@ router.get("/:workspaceId/project/:projectId", authenticate, requireWorkspaceMem
 
 //GET all project
 router.get("/:workspaceId/projects", authenticate, requireWorkspaceMember, async (req, res) => {
-    const { workspaceId } = req.params;
+    const { workspaceId } = req.params as { workspaceId: string };
+
+    const key = `workspace:${workspaceId}:projects`;
+
+    const cachedProject = await client.get(key);
+
+    if (cachedProject){
+        return res.status(200).json({
+            success: true,
+            data: {
+                project: JSON.parse(cachedProject)
+            }
+        })
+    }
 
     const projects = await prisma.project.findMany({
         where: {
             workspaceId
         }
     })
+
+    await client.set(key, JSON.stringify(projects));
 
     return res.status(200).json({
         success: true,
@@ -82,6 +97,33 @@ router.post('/:workspaceId/projects', validate(createProjectSchema), authenticat
     return res.status(201).json({
         success: true,
         message: "Project created!",
+        data: {
+            project
+        }
+    })
+})
+
+//PATCH project
+router.patch("/:workspaceId/project/:projectId", validate(patchProjectSchema), authenticate, requireWorkspaceMember, async (req, res) => {
+    const { projectId } = req.params as { projectId: string }
+
+    const { title } = req.body;
+
+    const key = `project:${projectId}`
+
+    const project = await prisma.project.update({
+        where: {
+            id: projectId
+        },
+        data: {
+            title
+        }
+    })
+
+    await client.del(key);
+
+    return res.status(200).json({
+        success: true,
         data: {
             project
         }
