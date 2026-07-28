@@ -6,8 +6,48 @@ import { workspaceAdmin } from "../middleware/workspaceAdmin";
 import { validate } from "../middleware/validator";
 import { createProjectSchema } from "../validators/projectValidator";
 import { NotFoundError } from "../errors/notFound";
+import { client } from "../lib/redis";
 
 const router = Router()
+
+//GET project
+router.get("/:workspaceId/project/:projectId", authenticate, requireWorkspaceMember, async (req, res) => {
+    const { projectId } = req.params as {
+        projectId: string
+    };
+
+    const key = `project:${projectId}`
+
+    const cachedProject = await client.get(key);
+
+    if (cachedProject){
+        return res.status(200).json({
+            success: true,
+            data: {
+                project: JSON.parse(cachedProject)
+            }
+        })
+    }
+
+    const project = await prisma.project.findUnique({
+        where: {
+            id: projectId
+        }
+    })
+
+    if (!project){
+        throw new NotFoundError("Project not found")
+    }
+
+    await client.set(key, JSON.stringify(project), { EX: 60 });
+
+    return res.status(200).json({
+        success: true,
+        data: {
+            project
+        }
+    })
+})
 
 //GET all project
 router.get("/:workspaceId/projects", authenticate, requireWorkspaceMember, async (req, res) => {
