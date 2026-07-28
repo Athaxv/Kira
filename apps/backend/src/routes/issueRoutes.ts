@@ -5,6 +5,7 @@ import { ForbiddenError } from "../errors/forbiddenError";
 import { NotFoundError } from "../errors/notFound";
 import { validate } from "../middleware/validator";
 import { issueSchema } from "../validators/issueValidator";
+import type { Prisma } from "../../../../packages/db/src/generated/prisma/client";
 
 const router = Router();
 
@@ -13,6 +14,41 @@ router.get("/:projectId/issues", authenticate, async (req, res) => {
     const userId = req.userId;
 
     const { projectId } = req.params;
+
+    const { status, severity, search } = req.query;
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 5;
+
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.IssueWhereInput = {
+        projectId
+    }
+
+    if (status){
+        where.status = status
+    }
+
+    if (severity){
+        where.severity = severity
+    }
+
+    if (search){
+        where.OR = [
+            {
+                title: {
+                    contains: search as String,
+                    mode: "insensitive"
+                }
+            },
+            {
+                description: {
+                    contains: search as String,
+                    mode: "insensitive"
+                }
+            }
+        ]
+    }
 
     const project = await prisma.project.findUnique({
         where: {
@@ -36,11 +72,17 @@ router.get("/:projectId/issues", authenticate, async (req, res) => {
     if (!isPartofWorkspace) {
         throw new ForbiddenError("You are not a member of this workspace")
     }
+    
+    const total = await prisma.issue.count({
+        where
+    })
+
+    const totalPages = Math.ceil(total/limit)
 
     const issues = await prisma.issue.findMany({
-        where: {
-            projectId: projectId
-        },
+        where,
+        skip,
+        take: limit,
         orderBy: {
             createdAt: "desc"
         }
@@ -48,9 +90,14 @@ router.get("/:projectId/issues", authenticate, async (req, res) => {
 
     return res.status(200).json({
         success: true,
-        message: "All issues",
         data: {
-            issues
+            issues,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages
+            }
         }
     })
 })
