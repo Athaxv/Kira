@@ -105,7 +105,10 @@ router.post('/:workspaceId/projects', validate(createProjectSchema), authenticat
 
 //PATCH project
 router.patch("/:workspaceId/project/:projectId", validate(patchProjectSchema), authenticate, requireWorkspaceMember, async (req, res) => {
-    const { projectId } = req.params as { projectId: string }
+    const { workspaceId, projectId } = req.params as { 
+        workspaceId: string,
+        projectId: string 
+    }
 
     const { title } = req.body;
 
@@ -121,6 +124,7 @@ router.patch("/:workspaceId/project/:projectId", validate(patchProjectSchema), a
     })
 
     await client.del(key);
+    await client.del(`workspace:${workspaceId}:projects`);
 
     return res.status(200).json({
         success: true,
