@@ -6,6 +6,7 @@ import { validate } from "../middleware/validator";
 import { loginSchema, registerSchema } from "../validators/authValidator";
 import { ConflictError } from "../errors/conflictError";
 import { UnauthroizedError } from "../errors/unauthorizedError";
+import { emailQueue } from "../jobs/email/queue";
 
 const router = Router()
 
@@ -34,6 +35,23 @@ router.post('/register', validate(registerSchema), async (req, res) => {
     })
 
     console.log("User created: ", user);
+
+    await emailQueue.add(
+        "Welcome",
+        {
+            type: "Welcome",
+            userId: user.id
+        },
+        {
+            attempts: 5,
+            backoff: {
+                type: "exponential",
+                delay: 1000
+            },
+            removeOnComplete: 100,
+            removeOnFail: 100,
+        }
+    )
 
     return res.status(201).json({
         success: true,

@@ -6,6 +6,7 @@ import { NotFoundError } from "../errors/notFound";
 import { validate } from "../middleware/validator";
 import { issueSchema } from "../validators/issueValidator";
 import type { Prisma } from "../../../../packages/db/src/generated/prisma/client";
+import { emailQueue } from "../jobs/email/queue";
 
 const router = Router();
 
@@ -225,6 +226,24 @@ router.patch("/issues/:issueId/assign", authenticate, async (req, res) => {
             assigneeId: checkAssigne.id
         }
     })
+
+    await emailQueue.add(
+        "Issue_assigned",
+        {
+            type: "Issue_assigned",
+            assigneeId: checkAssigne.id,
+            issueId: updateissue.id
+        },
+        {
+            attempts: 5,
+            backoff: {
+                type: "exponential",
+                delay: 1000
+            },
+            removeOnComplete: 100,
+            removeOnFail: 100,
+        }
+    )
 
 
     return res.status(200).json({
