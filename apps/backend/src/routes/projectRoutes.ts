@@ -6,7 +6,7 @@ import { workspaceAdmin } from "../middleware/workspaceAdmin";
 import { validate } from "../middleware/validator";
 import { createProjectSchema, patchProjectSchema } from "../validators/projectValidator";
 import { NotFoundError } from "../errors/notFound";
-import { client } from "../lib/redis";
+import { redis } from "@repo/redis";
 
 const router = Router()
 
@@ -18,7 +18,7 @@ router.get("/:workspaceId/project/:projectId", authenticate, requireWorkspaceMem
 
     const key = `project:${projectId}`
 
-    const cachedProject = await client.get(key);
+    const cachedProject = await redis.get(key);
 
     if (cachedProject){
         return res.status(200).json({
@@ -39,7 +39,7 @@ router.get("/:workspaceId/project/:projectId", authenticate, requireWorkspaceMem
         throw new NotFoundError("Project not found")
     }
 
-    await client.set(key, JSON.stringify(project), { EX: 60 });
+    await redis.set(key, JSON.stringify(project), "EX", 60);
 
     return res.status(200).json({
         success: true,
@@ -55,7 +55,7 @@ router.get("/:workspaceId/projects", authenticate, requireWorkspaceMember, async
 
     const key = `workspace:${workspaceId}:projects`;
 
-    const cachedProject = await client.get(key);
+    const cachedProject = await redis.get(key);
 
     if (cachedProject){
         return res.status(200).json({
@@ -72,7 +72,7 @@ router.get("/:workspaceId/projects", authenticate, requireWorkspaceMember, async
         }
     })
 
-    await client.set(key, JSON.stringify(projects));
+    await redis.set(key, JSON.stringify(projects));
 
     return res.status(200).json({
         success: true,
@@ -123,8 +123,8 @@ router.patch("/:workspaceId/project/:projectId", validate(patchProjectSchema), a
         }
     })
 
-    await client.del(key);
-    await client.del(`workspace:${workspaceId}:projects`);
+    await redis.del(key);
+    await redis.del(`workspace:${workspaceId}:projects`);
 
     return res.status(200).json({
         success: true,
