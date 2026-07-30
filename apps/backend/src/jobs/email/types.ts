@@ -1,5 +1,3 @@
-export interface sendEmailJob {
-    to: string,
-    subject: string,
-    body: string 
-}
+export type sendEmailJob = 
+    | { type: "Welcome", userId: string }
+    | { type: "Issue_assigned", assigneeId: string, issueId: string }

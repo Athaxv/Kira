@@ -10,3 +10,11 @@ export const emailWorker = new Worker<sendEmailJob>(
         connection: redis
     }
 )
+
+emailWorker.on("completed", (job) => {
+    console.log(`Job ${job.id} is completed`)
+})
+
+emailWorker.on("failed", (job, err) => {
+    console.error(`Job ${job?.id} failed`, err)
+})
