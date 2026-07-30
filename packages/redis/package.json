@@ -1,5 +1,5 @@
 {
-  "name": "redis",
+  "name": "@repo/redis",
   "module": "index.ts",
   "type": "module",
   "private": true,
@@ -8,5 +8,11 @@
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "ioredis": "^5.11.1"
   }
 }
