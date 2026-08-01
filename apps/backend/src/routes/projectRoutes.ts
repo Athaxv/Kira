@@ -13,7 +13,7 @@ const router = Router()
 //GET project
 router.get("/:workspaceId/project/:projectId", authenticate, requireWorkspaceMember, async (req, res) => {
     const { projectId } = req.params as {
-        projectId: string
+        projectId: string,
     };
 
     const key = `project:${projectId}`
@@ -66,26 +66,28 @@ router.get("/:workspaceId/projects", authenticate, requireWorkspaceMember, async
         })
     }
 
-    const projects = await prisma.project.findMany({
+    const project = await prisma.project.findMany({
         where: {
             workspaceId
         }
     })
 
-    await redis.set(key, JSON.stringify(projects));
+    await redis.set(key, JSON.stringify(project), "EX", 60);
 
     return res.status(200).json({
         success: true,
         data: {
-            projects
+            project
         }
     })
 })
 
 //POST create project
 router.post('/:workspaceId/projects', validate(createProjectSchema), authenticate, requireWorkspaceMember, workspaceAdmin, async (req, res) => {
-    const { workspaceId } = req.params;
+    const { workspaceId } = req.params as { workspaceId: string };
     const { title } = req.body;
+
+    const wkey = `workspace:${workspaceId}:projects`;
 
     const project = await prisma.project.create({
         data: {
@@ -93,6 +95,8 @@ router.post('/:workspaceId/projects', validate(createProjectSchema), authenticat
             workspaceId: workspaceId
         }
     })
+
+    await redis.del(wkey);
 
     return res.status(201).json({
         success: true,
@@ -136,7 +140,13 @@ router.patch("/:workspaceId/project/:projectId", validate(patchProjectSchema), a
 
 //DELETE project
 router.delete('/:workspaceId/projects/:projectId', authenticate, requireWorkspaceMember, workspaceAdmin, async (req, res) => {
-    const { projectId } = req.params;
+    const { projectId, workspaceId } = req.params as {
+        projectId: string,
+        workspaceId: string
+    };
+
+    const key = `project:${projectId}`
+    const wkey = `workspace:${workspaceId}:projects`;
 
     const findProject = await prisma.project.findUnique({
         where: {
@@ -153,6 +163,9 @@ router.delete('/:workspaceId/projects/:projectId', authenticate, requireWorkspac
             id: projectId
         }
     })
+
+    await redis.del(key);
+    await redis.del(wkey);
 
     return res.status(200).json({
         success: true,

@@ -152,7 +152,7 @@ router.post("/:projectId/issues", validate(issueSchema), authenticate, async (re
 })
 
 //PATCH assignee user
-router.patch("/issues/:issueId/assign", authenticate, async (req, res) => {
+router.patch("/:issueId/assign", authenticate, async (req, res) => {
     const userId = req.userId
 
     const { issueId } = req.params;
@@ -223,7 +223,7 @@ router.patch("/issues/:issueId/assign", authenticate, async (req, res) => {
             id: issueId
         },
         data: {
-            assigneeId: checkAssigne.id
+            assigneeId: checkAssigneeExists.id
         }
     })
 

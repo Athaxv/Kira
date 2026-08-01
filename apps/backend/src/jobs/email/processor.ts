@@ -25,8 +25,13 @@ export async function processEmailJob(job: Job<sendEmailJob>){
         await resend.emails.send({
             from: "noreply@athaxv.me",
             to: user.email,
-            subject: "Welcome, onboard",
-            text: "hey, thanks for registering with us"
+            subject: "Welcome to Kira 🎉",
+            text: `Hi, 
+            Welcome to Kira!
+
+Your account has been created successfully.
+
+Happy building!`
         })
     }
     else if (job.name === "Issue_assigned"){
