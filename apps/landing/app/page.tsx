@@ -6,6 +6,7 @@ import { Showcase } from "./components/showcase";
 import { Story } from "./components/story";
 import { UseCases } from "./components/use-cases";
 import { Pricing } from "./components/pricing";
+import { Faq } from "./components/faq";
 import { Cta } from "./components/cta";
 import { Footer } from "./components/footer";
 
@@ -21,6 +22,7 @@ export default function Home() {
         <Story />
         <UseCases />
         <Pricing />
+        <Faq />
         <Cta />
       </main>
       <Footer />
