@@ -7,10 +7,11 @@ import { loginSchema, registerSchema } from "../validators/authValidator";
 import { ConflictError } from "../errors/conflictError";
 import { UnauthroizedError } from "../errors/unauthorizedError";
 import { emailQueue } from "../jobs/email/queue";
+import { env } from "../config/env";
 
 const router = Router()
 
-const JWT_SECRET = process.env.SECRET!;
+const JWT_SECRET = env.JWT_SECRET;
 
 router.post('/register', validate(registerSchema), async (req, res) => {
     const { email, password } = req.body;
@@ -33,8 +34,6 @@ router.post('/register', validate(registerSchema), async (req, res) => {
             password: hashPassword
         }
     })
-
-    console.log("User created: ", user);
 
     await emailQueue.add(
         "Welcome",

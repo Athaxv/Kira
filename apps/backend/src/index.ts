@@ -1,3 +1,4 @@
+import { env } from "./config/env";
 import express from "express";
 import authRoutes from "./routes/authRoutes"
 import workspaceRoutes from "./routes/workspaceRoutes"
@@ -18,6 +19,6 @@ app.use("/issue", issueRoutes)
 
 app.use(errorHandler);
 
-app.listen(3000, () => {
-    console.log(`App running on PORT 3000`)
+app.listen(env.PORT, () => {
+    console.log(`App running on PORT ${env.PORT}`)
 })

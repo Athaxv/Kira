@@ -3,7 +3,7 @@ import type { NextFunction, Request, Response } from "express";
 
 export async function requireWorkspaceMember(req: Request, res: Response, next: NextFunction){
     try {
-        const { workspaceId } = req.params;
+        const { workspaceId } = req.params as { workspaceId: string };
         const userId = req.userId;
 
         console.log("WorkspaceId: ", workspaceId)
