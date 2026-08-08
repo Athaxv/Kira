@@ -8,9 +8,11 @@ import { errorHandler } from "./middleware/errorHandler";
 import { connectRedis } from "./lib/redis";
 import { pinoHttp } from "pino-http";
 import { logger } from "./lib/logger";
+import helmet from "helmet";
 
 const app = express();
 
+app.use(helmet());
 app.use(express.json());
 app.use(
     pinoHttp({
