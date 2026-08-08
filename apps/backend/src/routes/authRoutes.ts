@@ -8,6 +8,7 @@ import { ConflictError } from "../errors/conflictError";
 import { UnauthroizedError } from "../errors/unauthorizedError";
 import { emailQueue } from "../jobs/email/queue";
 import { env } from "../config/env";
+import { logger } from "../lib/logger";
 
 const router = Router()
 
@@ -35,6 +36,8 @@ router.post('/register', validate(registerSchema), async (req, res) => {
         }
     })
 
+    logger.info({ userId: user.id, email: user.email }, "User created")
+
     await emailQueue.add(
         "Welcome",
         {
@@ -51,6 +54,8 @@ router.post('/register', validate(registerSchema), async (req, res) => {
             removeOnFail: 100,
         }
     )
+
+    logger.info({ userId: user.id }, "Welcome mail pushed to queue")
 
     return res.status(201).json({
         success: true,

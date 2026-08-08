@@ -7,6 +7,7 @@ import { validate } from "../middleware/validator";
 import { createProjectSchema, patchProjectSchema } from "../validators/projectValidator";
 import { NotFoundError } from "../errors/notFound";
 import { redis } from "@repo/redis";
+import { logger } from "../lib/logger";
 
 const router = Router()
 
@@ -98,6 +99,8 @@ router.post('/:workspaceId/projects', validate(createProjectSchema), authenticat
 
     await redis.del(wkey);
 
+    logger.info(project, "Project created")
+
     return res.status(201).json({
         success: true,
         message: "Project created!",
@@ -166,6 +169,7 @@ router.delete('/:workspaceId/projects/:projectId', authenticate, requireWorkspac
 
     await redis.del(key);
     await redis.del(wkey);
+    logger.info("Project Deleted");
 
     return res.status(200).json({
         success: true,

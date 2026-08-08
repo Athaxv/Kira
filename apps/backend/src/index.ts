@@ -6,9 +6,17 @@ import projectRoutes from "./routes/projectRoutes"
 import issueRoutes from "./routes/issueRoutes"
 import { errorHandler } from "./middleware/errorHandler";
 import { connectRedis } from "./lib/redis";
+import { pinoHttp } from "pino-http";
+import { logger } from "./lib/logger";
 
 const app = express();
+
 app.use(express.json());
+app.use(
+    pinoHttp({
+        logger
+    })
+)
 
 await connectRedis();
 

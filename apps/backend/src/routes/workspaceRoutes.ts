@@ -5,6 +5,7 @@ import { UnauthroizedError } from "../errors/unauthorizedError";
 import { validate } from "../middleware/validator";
 import { addMembertoWorkspace, workspaceSchema } from "../validators/workspaceValidator";
 import { NotFoundError } from "../errors/notFound";
+import { logger } from "../lib/logger";
 
 const router = Router();
 
@@ -35,6 +36,8 @@ router.post("/", authenticate, validate(workspaceSchema), async (req, res) => {
 
         return workspace;
     })
+
+    logger.info(workspace, "workspace created")
 
     res.status(201).json({
         success: true,
@@ -98,6 +101,8 @@ router.post("/:workspaceId/members", validate(addMembertoWorkspace), authenticat
             workspaceId: workspaceId
         }
     })
+
+    logger.info("Member added to workspace")
 
     return res.status(201).json({
         success: true,

@@ -7,6 +7,7 @@ import { validate } from "../middleware/validator";
 import { issueSchema } from "../validators/issueValidator";
 import type { Prisma } from "../../../../packages/db/src/generated/prisma/client";
 import { emailQueue } from "../jobs/email/queue";
+import { logger } from "../lib/logger";
 
 const router = Router();
 
@@ -141,6 +142,8 @@ router.post("/:projectId/issues", validate(issueSchema), authenticate, async (re
             projectId: project.id
         }
     })
+
+    logger.info(issue, "Issue created");
 
     return res.status(201).json({
         success: true,

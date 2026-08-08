@@ -2,6 +2,7 @@ import { Worker } from "bullmq";
 import type { sendEmailJob } from "./types";
 import { redis } from "@repo/redis";
 import { processEmailJob }  from "./processor";
+import { logger } from "../../lib/logger";
 
 export const emailWorker = new Worker<sendEmailJob>(
     "email",
@@ -12,9 +13,16 @@ export const emailWorker = new Worker<sendEmailJob>(
 )
 
 emailWorker.on("completed", (job) => {
-    console.log(`Job ${job.id} is completed`)
+    logger.info({
+        jobId: job.id,
+        jobName: job.name
+    }, "Job completed")
 })
 
 emailWorker.on("failed", (job, err) => {
-    console.error(`Job ${job?.id} failed`, err)
+    logger.error({
+        err,
+        JobId: job?.id,
+        jobName: job?.name
+    }, "Job failed")
 })
