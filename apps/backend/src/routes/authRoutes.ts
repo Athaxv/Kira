@@ -9,10 +9,13 @@ import { UnauthroizedError } from "../errors/unauthorizedError";
 import { emailQueue } from "../jobs/email/queue";
 import { env } from "../config/env";
 import { logger } from "../lib/logger";
+import { rateLimiter } from "../middleware/rateLimiter";
 
 const router = Router()
 
 const JWT_SECRET = env.JWT_SECRET;
+
+router.use(rateLimiter);
 
 router.post('/register', validate(registerSchema), async (req, res) => {
     const { email, password } = req.body;
