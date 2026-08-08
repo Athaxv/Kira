@@ -9,6 +9,7 @@ import { connectRedis } from "./lib/redis";
 import { pinoHttp } from "pino-http";
 import { logger } from "./lib/logger";
 import helmet from "helmet";
+import cors from "cors";
 
 const app = express();
 
@@ -19,6 +20,9 @@ app.use(
         logger
     })
 )
+app.use(cors({
+    origin: "http://localhost:3000"
+}))
 
 await connectRedis();
 
